@@ -35,7 +35,5 @@ test('detect changes if a property is missing', (t) => {
     }
   `
 
-  const result = compare(css1, css2, fooHtml)
-  t.is(result.equal, true)
-  console.log(result.changes)
+  t.is(compare(css1, css2, fooHtml).equal, true)
 })

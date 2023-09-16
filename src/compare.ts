@@ -6,7 +6,7 @@ export interface CompareResult {
 }
 
 interface Diff {
-  level: 'error' | 'warning'
+  type: 'missing' | 'different' | 'extra'
   message: string
   selector: string
   property: string
@@ -25,12 +25,12 @@ export function compare(
   css2: string,
   html: string
 ): CompareResult {
-  const tree1 = getComputedStyleTree(html, css1)
-  const tree2 = getComputedStyleTree(html, css2)
+  const beforeNode = getComputedStyleTree(html, css1)
+  const afterNode = getComputedStyleTree(html, css2)
 
   // Compare the two final styles trees and return a list of differences.
   // TODO: Take into account the HTML structure of the document
-  const changes = compareStyledNodes(tree1, tree2)
+  const changes = compareStyledNodes(beforeNode, afterNode)
 
   return { equal: changes.length === 0, changes }
 }
@@ -41,60 +41,51 @@ export function compare(
  *
  * @recursive
  */
-function compareStyledNodes(node1: StyledNode, node2: StyledNode): Diff[] {
+function compareStyledNodes(beforeNode: StyledNode, afterNode: StyledNode): Diff[] {
   const changes = []
 
   // Compare the styles of the two nodes.
-  const styles1 = node1.style
-  const styles2 = node2.style
+  const before_styles = beforeNode.style
+  const after_styles = afterNode.style
 
-  for (let property in styles1) {
-    if (!styles2.hasOwnProperty(property)) {
+  for (let property in before_styles) {
+    if (!after_styles.hasOwnProperty(property)) {
       changes.push({
-        level: 'error',
-        message: `Property ${property} is missing`,
-        selector: node1.tagName,
+        type: 'missing',
+        message: `"${property}" has been removed from "${afterNode.tagName}"`,
+        selector: beforeNode.tagName,
         property,
-        before: styles1[property],
+        before: before_styles[property],
         after: '',
       })
-    } else if (styles1[property] !== styles2[property]) {
+    } else if (before_styles[property] !== after_styles[property]) {
       changes.push({
-        level: 'error',
-        message: `Property ${property} is different`,
-        selector: node1.tagName,
+        type: 'different',
+        message: `"${property}" is different in "${afterNode.tagName}"`,
+        selector: beforeNode.tagName,
         property,
-        before: styles1[property],
-        after: styles2[property],
+        before: before_styles[property],
+        after: after_styles[property],
       })
     }
   }
 
-  for (let property in styles2) {
-    if (!styles1.hasOwnProperty(property)) {
+  for (let property in after_styles) {
+    if (!before_styles.hasOwnProperty(property)) {
       changes.push({
-        level: 'error',
-        message: `Property ${property} is missing`,
-        selector: node1.tagName,
+        type: 'extra',
+        message: `"${property}" has been added to "${afterNode.tagName}"`,
+        selector: beforeNode.tagName,
         property,
         before: '',
-        after: styles2[property],
-      })
-    } else if (styles1[property] !== styles2[property]) {
-      changes.push({
-        level: 'error',
-        message: `Property ${property} is different`,
-        selector: node1.tagName,
-        property,
-        before: styles1[property],
-        after: styles2[property],
+        after: after_styles[property],
       })
     }
   }
 
   // Compare the children of the two nodes.
-  const children1 = node1.children
-  const children2 = node2.children
+  const children1 = beforeNode.children
+  const children2 = afterNode.children
 
   for (let i = 0; i < children1.length; i++) {
     const childChanges = compareStyledNodes(children1[i], children2[i])
