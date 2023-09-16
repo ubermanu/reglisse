@@ -28,5 +28,4 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm i
-      - run: pnpm checks
-      - run: pnpm test:summary
+      - run: pnpm test
