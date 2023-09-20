@@ -14,19 +14,19 @@
   "license": "MIT",
   "author": "Emmanuel Vodor <manu@paca.happy-dev.fr>",
   "type": "module",
-  "scripts": {
-    "test": "NODE_OPTIONS='--loader=tsx' ava"
-  },
+  "module": "index.ts",
   "prettier": "@ubermanu/prettier-config",
   "dependencies": {
-    "jsdom": "^22.1.0"
+    "puppeteer": "^21.3.1"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.3",
     "@ubermanu/prettier-config": "^3.2.0",
-    "ava": "^5.3.1",
-    "prettier": "^3.0.3",
-    "tsx": "^3.12.10"
+    "bun-types": "latest",
+    "prettier": "^3.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=20"
