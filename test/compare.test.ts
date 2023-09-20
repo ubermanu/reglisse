@@ -1,4 +1,4 @@
-import {test, expect} from 'bun:test'
+import { expect, test } from 'bun:test'
 import { compare } from '../src/compare'
 
 const fooHtml = '<div class="foo">bar</div>'

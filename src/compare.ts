@@ -1,4 +1,4 @@
-import { getComputedNodeTree, ComputedNode } from './style-tree'
+import { ComputedNode, getComputedNodeTree } from './style-tree'
 
 export interface CompareResult {
   equal: boolean
@@ -44,7 +44,10 @@ export async function compare(
  *
  * @recursive
  */
-function compareComputedNodes(beforeNode: ComputedNode, afterNode: ComputedNode): Difference[] {
+function compareComputedNodes(
+  beforeNode: ComputedNode,
+  afterNode: ComputedNode
+): Difference[] {
   const changes = []
 
   // Compare the styles of the two nodes.

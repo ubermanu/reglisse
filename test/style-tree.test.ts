@@ -21,16 +21,24 @@ test('returns the style tree for html with a div', async () => {
   expect(tree.children[1].children[0].tagName).toBe('div')
 })
 
-test('setting the color of html sets the color of the body',async () => {
-  const tree = await getComputedNodeTree('<div>foo</div>', 'html { color: red; }')
+test('setting the color of html sets the color of the body', async () => {
+  const tree = await getComputedNodeTree(
+    '<div>foo</div>',
+    'html { color: red; }'
+  )
 
   expect(tree.children[1].style.color).toBe('rgb(255, 0, 0)')
   expect(tree.children[1].children[0].style.color).toBe('rgb(255, 0, 0)')
-  expect(tree.children[1].children[0].children[0].style.color).toBe('rgb(255, 0, 0)')
+  expect(tree.children[1].children[0].children[0].style.color).toBe(
+    'rgb(255, 0, 0)'
+  )
 })
 
-test('setting a property on a tag sets the property on the tag',async () => {
-  const tree = await getComputedNodeTree('<div>foo</div>', 'div { color: red; }')
+test('setting a property on a tag sets the property on the tag', async () => {
+  const tree = await getComputedNodeTree(
+    '<div>foo</div>',
+    'div { color: red; }'
+  )
 
   expect(tree.children[1].style.color).toBe('rgb(0, 0, 0)')
   expect(tree.children[1].children[0].style.color).toBe('rgb(255, 0, 0)')
