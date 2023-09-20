@@ -1,37 +1,37 @@
-import test from 'ava'
-import { getComputedStyleTree } from '../src/style-tree'
+import { expect, test } from 'bun:test'
+import { getComputedNodeTree } from '../src/style-tree'
 
-test('returns the default style tree for empty html', (t) => {
-  const tree = getComputedStyleTree('', '')
+test('returns the default style tree for empty html', async () => {
+  const tree = await getComputedNodeTree('', '')
 
-  t.is(tree.tagName, 'html')
-  t.is(tree.children.length, 2)
-  t.is(tree.children[0].tagName, 'head')
-  t.is(tree.children[1].tagName, 'body')
+  expect(tree.tagName).toBe('html')
+  expect(tree.children).toHaveLength(2)
+  expect(tree.children[0].tagName).toBe('head')
+  expect(tree.children[1].tagName).toBe('body')
 })
 
-test('returns the style tree for html with a div', (t) => {
-  const tree = getComputedStyleTree('<div>foo</div>', '')
+test('returns the style tree for html with a div', async () => {
+  const tree = await getComputedNodeTree('<div>foo</div>', '')
 
-  t.is(tree.tagName, 'html')
-  t.is(tree.children.length, 2)
-  t.is(tree.children[0].tagName, 'head')
-  t.is(tree.children[1].tagName, 'body')
-  t.is(tree.children[1].children.length, 1)
-  t.is(tree.children[1].children[0].tagName, 'div')
+  expect(tree.tagName).toBe('html')
+  expect(tree.children).toHaveLength(2)
+  expect(tree.children[0].tagName).toBe('head')
+  expect(tree.children[1].tagName).toBe('body')
+  expect(tree.children[1].children).toHaveLength(1)
+  expect(tree.children[1].children[0].tagName).toBe('div')
 })
 
-test('setting the color of html sets the color of the body', (t) => {
-  const tree = getComputedStyleTree('<div>foo</div>', 'html { color: red; }')
+test('setting the color of html sets the color of the body',async () => {
+  const tree = await getComputedNodeTree('<div>foo</div>', 'html { color: red; }')
 
-  t.is(tree.children[1].style.color, 'rgb(255, 0, 0)')
-  t.is(tree.children[1].style.color, 'rgb(255, 0, 0)')
-  t.is(tree.children[1].children[0].style.color, 'rgb(255, 0, 0)')
+  expect(tree.children[1].style.color).toBe('rgb(255, 0, 0)')
+  expect(tree.children[1].children[0].style.color).toBe('rgb(255, 0, 0)')
+  expect(tree.children[1].children[0].children[0].style.color).toBe('rgb(255, 0, 0)')
 })
 
-test('setting a property on a tag sets the property on the tag', (t) => {
-  const tree = getComputedStyleTree('<div>foo</div>', 'div { color: red; }')
+test('setting a property on a tag sets the property on the tag',async () => {
+  const tree = await getComputedNodeTree('<div>foo</div>', 'div { color: red; }')
 
-  t.is(tree.children[1].style.color, undefined)
-  t.is(tree.children[1].children[0].style.color, 'rgb(255, 0, 0)')
+  expect(tree.children[1].style.color).toBe('rgb(0, 0, 0)')
+  expect(tree.children[1].children[0].style.color).toBe('rgb(255, 0, 0)')
 })

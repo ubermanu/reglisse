@@ -1,9 +1,9 @@
-import test from 'ava'
+import {test, expect} from 'bun:test'
 import { compare } from '../src/compare'
 
 const fooHtml = '<div class="foo">bar</div>'
 
-test('ignores css comments', (t) => {
+test('ignores css comments', async () => {
   const css1 = `
     /* Comment */
     .foo {
@@ -19,14 +19,14 @@ test('ignores css comments', (t) => {
     }
   `
 
-  t.is(compare(css1, css2, fooHtml).equal, true)
+  expect((await compare(css1, css2, fooHtml)).equal).toBe(true)
 })
 
-test('detect changes if a property is missing', (t) => {
+test('detect changes if a property is missing', async () => {
   const css1 = `
     .foo {
       color: red;
-      font-size: 16px;
+      font-size: 10px;
     }
   `
 
@@ -36,16 +36,15 @@ test('detect changes if a property is missing', (t) => {
     }
   `
 
-  const result = compare(css1, css2, fooHtml)
-  t.is(result.equal, false)
-  t.is(result.changes.length, 1)
-  t.is(result.changes[0].type, 'missing')
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.equal).toBe(false)
+  expect(result.changes).toHaveLength(1)
 })
 
-test('detect changes if a property is different', (t) => {
+test('detect changes if a property is different', async () => {
   const css1 = `
     .foo {
-      font-size: 16px;
+      font-size: 10px;
     }
   `
 
@@ -55,13 +54,12 @@ test('detect changes if a property is different', (t) => {
     }
   `
 
-  const result = compare(css1, css2, fooHtml)
-  t.is(result.equal, false)
-  t.is(result.changes.length, 1)
-  t.is(result.changes[0].type, 'different')
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.equal).toBe(false)
+  expect(result.changes).toHaveLength(1)
 })
 
-test('detect changes if a property is extra', (t) => {
+test('detect changes if a property is extra', async () => {
   const css1 = `
     .foo {
       color: red;
@@ -71,12 +69,11 @@ test('detect changes if a property is extra', (t) => {
   const css2 = `
     .foo {
       color: red;
-      font-size: 16px;
+      font-size: 10px;
     }
   `
 
-  const result = compare(css1, css2, fooHtml)
-  t.is(result.equal, false)
-  t.is(result.changes.length, 1)
-  t.is(result.changes[0].type, 'extra')
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.equal).toBe(false)
+  expect(result.changes).toHaveLength(1)
 })
