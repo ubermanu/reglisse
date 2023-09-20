@@ -11,21 +11,16 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: ['20.x']
+        bun-version: ['1.x']
 
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v2
+      - uses: oven-sh/setup-bun@v1
         with:
-          version: 8
+          bun-version: ${{ matrix.bun-version }}
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - run: pnpm i
-      - run: pnpm test
+      - run: bun i
+      - run: bun test
