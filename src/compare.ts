@@ -46,7 +46,7 @@ export async function compare(
   }
 
   // Remove the change if there is no rule that affects it,
-  // It might be a side effect of another change
+  // It might be a side effect of another property change
   changes = changes.filter((change) => {
     return change.prev.cssDeclaration || change.next.cssDeclaration
   })

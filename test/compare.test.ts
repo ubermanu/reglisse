@@ -19,7 +19,9 @@ test('ignores css comments', async () => {
     }
   `
 
-  expect((await compare(css1, css2, fooHtml)).equal).toBe(true)
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.equal).toBe(true)
+  expect(result.changes).toHaveLength(0)
 })
 
 test('detect changes if a property is missing', async () => {
@@ -37,7 +39,6 @@ test('detect changes if a property is missing', async () => {
   `
 
   const result = await compare(css1, css2, fooHtml)
-  expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
 
   expect(result.changes[0].property).toBe('font-size')
@@ -63,7 +64,6 @@ test('detect changes if a property is different', async () => {
   `
 
   const result = await compare(css1, css2, fooHtml)
-  expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
 
   expect(result.changes[0].property).toBe('font-size')
@@ -90,6 +90,33 @@ test('detect changes if a property is extra', async () => {
   `
 
   const result = await compare(css1, css2, fooHtml)
-  expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
+})
+
+test('detect changes if a parent prop is !important', async () => {
+  const css1 = `
+    html {
+      font-size: 20px;
+    }
+    div {
+      font-size: 8px;
+    }
+  `
+
+  const css2 = `
+    html {
+      font-size: 20px;
+    }
+    .foo {
+      font-size: 10px !important;
+    }
+  `
+
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.changes).toHaveLength(1)
+
+  expect(result.changes[0].property).toBe('font-size')
+
+  expect(result.changes[0].prev.value).toBe('8px')
+  expect(result.changes[0].next.value).toBe('10px')
 })

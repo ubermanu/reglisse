@@ -60,11 +60,15 @@ export const findChangeDeclaration = memo(
     })
 
     let cssDeclaration: CssDeclarationAST | null = null
+    let stop = false
 
     // Find the specific declarations that affects the change
     for (const selectorRule of selectorRules) {
-      const declarations = extractDeclarations(selectorRule.cssRule)
+      if (stop) {
+        break
+      }
 
+      const declarations = extractDeclarations(selectorRule.cssRule)
       let responsibleDeclaration: CssDeclarationAST | null = null
 
       // TODO: Start with the latest declaration in the AST
@@ -80,12 +84,14 @@ export const findChangeDeclaration = memo(
           continue
         }
 
-        responsibleDeclaration = decl
-      }
+        if (decl.value.endsWith('!important')) {
+          // If the value is `!important`, it overrides all other declarations
+          cssDeclaration = decl
+          stop = true
+          break
+        }
 
-      if (responsibleDeclaration) {
-        cssDeclaration = responsibleDeclaration
-        break
+        responsibleDeclaration = decl
       }
     }
 
