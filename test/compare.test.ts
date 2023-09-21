@@ -39,6 +39,14 @@ test('detect changes if a property is missing', async () => {
   const result = await compare(css1, css2, fooHtml)
   expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
+
+  expect(result.changes[0].property).toBe('font-size')
+
+  expect(result.changes[0].prev.value).toBe('10px')
+  expect(result.changes[0].next.value).not.toBe('10px')
+
+  expect(result.changes[0].prev.cssDeclaration).not.toBe(null)
+  expect(result.changes[0].next.cssDeclaration).toBe(null)
 })
 
 test('detect changes if a property is different', async () => {
@@ -57,6 +65,14 @@ test('detect changes if a property is different', async () => {
   const result = await compare(css1, css2, fooHtml)
   expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
+
+  expect(result.changes[0].property).toBe('font-size')
+
+  expect(result.changes[0].prev.value).toBe('10px')
+  expect(result.changes[0].next.value).toBe('20px')
+
+  expect(result.changes[0].prev.cssDeclaration).not.toBe(null)
+  expect(result.changes[0].next.cssDeclaration).not.toBe(null)
 })
 
 test('detect changes if a property is extra', async () => {
@@ -74,8 +90,6 @@ test('detect changes if a property is extra', async () => {
   `
 
   const result = await compare(css1, css2, fooHtml)
-
-  console.log(result.changes)
   expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
 })

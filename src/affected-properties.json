@@ -1,4 +1,8 @@
 {
+  "height": ["font-size"],
+  "line-height": ["font-size"],
+  "perspective-origin": ["font-size"],
+  "transform-origin": ["font-size"],
   "border-block-end-color": ["color", "border-color", "border-block-end-color"],
   "border-block-start-color": ["color", "border-color"],
   "border-bottom-color": ["color", "border-color"],

@@ -5,6 +5,21 @@ export interface CompareResult {
   changes: Difference[]
 }
 
+/**
+ * The computed context regroups the computed value, the computed node, and the
+ * CSS rule and declaration that affect the computed value.
+ */
+type ComputedContext = {
+  /** The computed value of the CSS property. */
+  value: string
+
+  /** The computed node that is affected by the CSS declaration. */
+  computedNode: ComputedNode
+
+  /** The CSS declaration that affects the computed value. */
+  cssDeclaration: CssDeclarationAST | null
+}
+
 export interface Difference {
   /**
    * The CSS property that changed. The property is not a combined property
@@ -12,17 +27,11 @@ export interface Difference {
    */
   property: string
 
-  /** The value before the change. */
-  before: string
+  /** The context before the change. */
+  prev: ComputedContext
 
-  /** The value after the change. */
-  after: string
-
-  /** The computed node (HTML Element) that changed. */
-  computedNode: ComputedNode
-
-  /** The CSS declaration that affect this change. */
-  cssDeclaration: CssDeclarationAST | null
+  /** The context after the change. */
+  next: ComputedContext
 }
 
 export interface ComputedNode {
