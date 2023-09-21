@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { getComputedNodeTree } from '../src/computed-tree.ts'
+import { getComputedNodeTree } from '../src/computed-tree'
 
 const fooHtml = '<div>foo</div>'
 
