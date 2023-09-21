@@ -17,6 +17,8 @@
   "module": "index.ts",
   "prettier": "@ubermanu/prettier-config",
   "dependencies": {
+    "@adobe/css-tools": "^4.3.1",
+    "cheerio": "^1.0.0-rc.12",
     "puppeteer": "^21.3.1"
   },
   "devDependencies": {

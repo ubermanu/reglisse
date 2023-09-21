@@ -74,6 +74,8 @@ test('detect changes if a property is extra', async () => {
   `
 
   const result = await compare(css1, css2, fooHtml)
+
+  console.log(result.changes)
   expect(result.equal).toBe(false)
   expect(result.changes).toHaveLength(1)
 })
