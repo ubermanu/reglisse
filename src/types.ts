@@ -1,4 +1,4 @@
-import { CssAtRuleAST } from '@adobe/css-tools'
+import { CssDeclarationAST } from '@adobe/css-tools'
 
 export interface CompareResult {
   equal: boolean
@@ -6,7 +6,10 @@ export interface CompareResult {
 }
 
 export interface Difference {
-  /** The CSS property that changed. */
+  /**
+   * The CSS property that changed. The property is not a combined property
+   * (e.g. `margin`), but a single property (e.g. `margin-top`).
+   */
   property: string
 
   /** The value before the change. */
@@ -18,8 +21,8 @@ export interface Difference {
   /** The computed node (HTML Element) that changed. */
   computedNode: ComputedNode
 
-  /** The CSS rules that affect this change. */
-  cssRules?: CssAtRuleAST[]
+  /** The CSS declaration that affect this change. */
+  cssDeclaration: CssDeclarationAST | null
 }
 
 export interface ComputedNode {

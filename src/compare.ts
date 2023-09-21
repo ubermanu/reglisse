@@ -1,5 +1,9 @@
-import { parse } from '@adobe/css-tools'
+import { CssDeclarationAST, CssRuleAST, parse } from '@adobe/css-tools'
+import Specificity from '@bramus/specificity'
+import memo from 'memoizee'
 import { Viewport } from 'puppeteer'
+// @ts-ignore
+import affectedProperties from './affected-properties.json'
 import { getComputedNodeTree } from './computed-tree'
 import { createSelectorMatcher } from './selector-matcher.ts'
 import { CompareResult, ComputedNode, Difference } from './types.ts'
@@ -40,21 +44,141 @@ export async function compare(
 
   const selectorMatcher = createSelectorMatcher(html)
 
-  // For each change, find the CSS rule that affects it
-  // TODO: Climb up the tree and test the parent selectors too
+  interface SelectorRule {
+    selectors: string[]
+    specificities: Specificity[]
+    cssRule: CssRuleAST
+  }
+
+  // Find the CSS rules for a given computed node (including parent selectors)
+  const findSelectorRules = memo(
+    (computedNode: ComputedNode): SelectorRule[] => {
+      const selectorRules: SelectorRule[] = []
+      let node = computedNode
+
+      console.log('findSelectorRules', computedNode.selector)
+
+      while (node) {
+        const r = rules.filter((rule) => rule.type === 'rule') as CssRuleAST[]
+
+        r.forEach((rule) => {
+          const selectors = rule.selectors.filter((selector) =>
+            selectorMatcher.matches(computedNode.selector, selector)
+          )
+
+          console.log('rule:', rule.selectors.join(', '))
+          console.log('selectors:', selectors.join(', '))
+
+          // If the rule matches the selector, add it to the list
+          if (selectors.length > 0) {
+            const specificities = Specificity.calculate(selectors.join(', '))
+            selectorRules.push({ selectors, specificities, cssRule: rule })
+          }
+        })
+
+        node = node.parent
+      }
+      return selectorRules
+    }
+  )
+
   changes.forEach((change) => {
-    const rule = rules.find((rule) => {
-      if (rule.type !== 'rule') return false
-      return rule.selectors.some((selector) =>
-        selectorMatcher.matches(selector, change.computedNode.selector)
-      )
+    console.log('change:', change.property)
+
+    // Get all the rules that could affect this change (based on the selector)
+    // Include the rules from the parent selectors
+    const selectorRules = findSelectorRules(change.computedNode)
+
+    const selectorRulesWithDeclarations = selectorRules.filter(
+      (selectorRule) => {
+        const { selectors, cssRule } = selectorRule
+
+        // Filter the rules that do not contain: the property or `all` or a matching
+        // combined property
+        const declarations = cssRule.declarations.filter((decl) => {
+          if (decl.type !== 'declaration') {
+            return false
+          }
+          if (decl.property === change.property) {
+            return true
+          }
+          if (decl.property === 'all') {
+            return true
+          }
+          // Check if the property is a combined property (e.g. `margin`)
+          if (
+            affectedProperties[decl.property] &&
+            affectedProperties[decl.property].includes(change.property)
+          ) {
+            return true
+          }
+        })
+
+        return declarations.length > 0
+      }
+    )
+
+    // TODO: Check that the rules are sorted from high to low specificity
+    const sortedSelectorRules = selectorRulesWithDeclarations.sort((a, b) => {
+      const aSpec = Specificity.max(...a.specificities)
+      const bSpec = Specificity.max(...b.specificities)
+      return Specificity.compare(aSpec, bSpec)
     })
 
-    // Add the rule to the change
-    if (rule) {
-      change.cssRules.push(rule)
+    console.log(sortedSelectorRules.length)
+    console.log(sortedSelectorRules.map((r) => r.selectors.join(', ')))
+    console.log('---')
+
+    // For each selector rule, find the declarations that affect the change
+    // We stop at important
+    for (const selectorRule of sortedSelectorRules) {
+      const { cssRule } = selectorRule
+
+      const declarations = cssRule.declarations.filter(
+        (decl) => decl.type === 'declaration'
+      ) as CssDeclarationAST[]
+
+      let responsibleDeclaration: CssDeclarationAST | null = null
+
+      /**
+       * Returns TRUE if the declaration property can affect the changed
+       * property.
+       */
+      function canAffect(declProp: string, changeProp: string): boolean {
+        return (
+          declProp === changeProp ||
+          declProp === 'all' ||
+          (affectedProperties[declProp] &&
+            affectedProperties[declProp].includes(changeProp))
+        )
+      }
+
+      // TODO: Start with the latest declaration in the AST
+      // TODO: Handle `inherit` and `currentColor`
+      for (const decl of declarations.reverse()) {
+        if (!canAffect(decl.property, change.property)) {
+          continue
+        }
+
+        // @ts-ignore
+        if (responsibleDeclaration && !decl.important) {
+          // It has to be `!important` to override the previous declaration
+          continue
+        }
+
+        responsibleDeclaration = decl
+      }
+
+      if (responsibleDeclaration) {
+        console.log('responsibleDeclaration:', responsibleDeclaration)
+        change.cssDeclaration = responsibleDeclaration
+        break
+      }
     }
   })
+
+  // Remove changes that are not affected by CSS rules
+  changes = changes.filter((change) => change.cssDeclaration !== null)
 
   return { equal: changes.length === 0, changes }
 }
@@ -82,7 +206,7 @@ function compareComputedNodes(
         before: before_styles[property],
         after: after_styles[property],
         computedNode: afterNode,
-        cssRules: [],
+        cssDeclaration: null,
       })
     }
   }
@@ -105,7 +229,7 @@ function compareComputedNodes(
         before: before_rect[property].toString(),
         after: after_rect[property].toString(),
         computedNode: afterNode,
-        cssRules: [],
+        cssDeclaration: null,
       })
     }
   })
@@ -120,16 +244,6 @@ function compareComputedNodes(
     const childChanges = compareComputedNodes(children1[i], children2[i])
     changes.push(...childChanges)
   }
-
-  // TODO: Find the CSS rules that affect this change and filter out the ones
-  //  that just inherit from the base property.
-  //  for example: `font-size` affects `block-size`, `height` etc...
-  //  so we need a mechanism to filter out the ones that are not the source of
-  //  the change.
-
-  // 1. Find matching CSS rules for the node (in the new stylesheet)
-  // 2. Find the CSS rules that affect this property (or a property that can affect it)
-  // 3. Add the rules to the `cssRules` property of the difference
 
   return changes
 }
