@@ -16,8 +16,8 @@ export async function compare(
   html: string,
   viewport?: Viewport
 ): Promise<CompareResult> {
-  const beforeNode = await getComputedNodeTree(html, css1)
-  const afterNode = await getComputedNodeTree(html, css2)
+  const beforeNode = await getComputedNodeTree(html, css1, viewport)
+  const afterNode = await getComputedNodeTree(html, css2, viewport)
 
   // Compare the two computed node trees and return a list of changes
   let changes = compareComputedNodes(beforeNode, afterNode)
