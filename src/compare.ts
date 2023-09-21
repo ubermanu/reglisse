@@ -1,4 +1,4 @@
-import { ComputedNode, getComputedNodeTree } from './style-tree'
+import { ComputedNode, getComputedNodeTree } from './computed-tree.ts'
 
 export interface CompareResult {
   equal: boolean

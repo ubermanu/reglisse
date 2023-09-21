@@ -1,6 +1,6 @@
-// TODO: Add a way to generate a selector?
 import { createPuppet } from './puppet'
 
+// TODO: Add a way to generate a selector?
 export interface ComputedNode {
   children: ComputedNode[]
   pseudos: ComputedNode[]
@@ -20,8 +20,7 @@ export async function getComputedNodeTree(
   html: string,
   css: string
 ): Promise<ComputedNode> {
-  // TODO: Remove CSS and script tags from the document
-  const { page, browser } = await createPuppet(css, html)
+  const { page, browser } = await createPuppet(html, css)
 
   const tree = await page.evaluate(() => {
     // Recursive function to crawl the DOM tree and build the tree structure
