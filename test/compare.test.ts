@@ -146,3 +146,29 @@ test('declaration value is set to inherit', async () => {
   expect(result.changes[0].property).toBe('font-size')
   expect(result.changes[0].next.cssDeclaration.value).toBe('20px')
 })
+
+test('replaced by a shorthand declaration for same property', async () => {
+  const css1 = `
+    div {
+      margin-left: 10px;
+    }
+  `
+
+  const css2 = `
+    div {
+      margin: 10px;
+    }
+  `
+
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.changes).toHaveLength(3)
+
+  expect(result.changes[0].property).toBe('margin-bottom')
+  expect(result.changes[0].next.cssDeclaration.value).toBe('10px')
+
+  expect(result.changes[1].property).toBe('margin-right')
+  expect(result.changes[1].next.cssDeclaration.value).toBe('10px')
+
+  expect(result.changes[2].property).toBe('margin-top')
+  expect(result.changes[2].next.cssDeclaration.value).toBe('10px')
+})

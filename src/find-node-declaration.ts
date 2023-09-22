@@ -1,6 +1,7 @@
 import { CssDeclarationAST, CssRuleAST } from '@adobe/css-tools'
 import memo from 'memoizee'
 import inheritedCssProperties from './css-properties/inherited'
+import shorthandCssProperties from './css-properties/shorthand.ts'
 import { ComputedNode } from './types.ts'
 
 /**
@@ -35,6 +36,16 @@ export const findNodeDeclaration = memo(
         if (decl.property === property || decl.property === 'all') {
           curDeclaration = decl
           break outer
+        }
+      }
+
+      // Check for shorthands
+      if (shorthandCssProperties[property]) {
+        for (const decl of declarations.reverse()) {
+          if (shorthandCssProperties[property]!.includes(decl.property)) {
+            curDeclaration = decl
+            break outer
+          }
         }
       }
     }
