@@ -30,9 +30,9 @@ test('the selector of each node is precise', async () => {
 
   expect(tree.selector).toBe('html')
   expect(tree.children[0].selector).toBe('body')
-  // expect(tree.children[0].children[0].selector).toBe('body > div:nth-child(1)')
-  // expect(tree.children[0].children[1].element.matches('body > div:nth-child(2)')).toBe(true)
-  // expect(tree.children[0].children[2].selector).toBe('body > div:nth-child(3)')
+  expect(tree.children[0].children[0].selector).toBe('body > div:nth-child(1)')
+  expect(tree.children[0].children[1].selector).toBe('body > div:nth-child(2)')
+  expect(tree.children[0].children[2].selector).toBe('body > div:nth-child(3)')
 })
 
 test('setting the color of html sets the color of the body', async () => {
