@@ -172,3 +172,31 @@ test('replaced by a shorthand declaration for same property', async () => {
   expect(result.changes[2].property).toBe('margin-top')
   expect(result.changes[2].next.cssDeclaration.value).toBe('10px')
 })
+
+test('detect important declarations', async () => {
+  const css1 = `
+    .foo {
+      font-size: 10px;
+    }
+  `
+
+  const css2 = `
+    body * {
+      font-size: 30px !important;
+    }
+    .foo {
+      font-size: 10px;
+    }
+  `
+
+  const result = await compare(css1, css2, fooHtml)
+
+  expect(result.changes).toHaveLength(1)
+  expect(result.changes[0].property).toBe('font-size')
+  expect(result.changes[0].prev.value).toBe('10px')
+  expect(result.changes[0].next.value).toBe('30px')
+
+  expect(result.changes[0].prev.cssDeclaration).not.toBe(null)
+  expect(result.changes[0].next.cssDeclaration).not.toBe(null)
+})
+
