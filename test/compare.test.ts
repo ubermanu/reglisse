@@ -24,7 +24,7 @@ test('ignores css comments', async () => {
   expect(result.changes).toHaveLength(0)
 })
 
-test('detect changes if a property is missing', async () => {
+test('property is deleted', async () => {
   const css1 = `
     .foo {
       color: red;
@@ -50,7 +50,7 @@ test('detect changes if a property is missing', async () => {
   expect(result.changes[0].next.cssDeclaration).toBe(null)
 })
 
-test('detect changes if a property is different', async () => {
+test('property is different', async () => {
   const css1 = `
     .foo {
       font-size: 10px;
@@ -75,7 +75,7 @@ test('detect changes if a property is different', async () => {
   expect(result.changes[0].next.cssDeclaration).not.toBe(null)
 })
 
-test('detect changes if a property is extra', async () => {
+test('property is extra', async () => {
   const css1 = `
     .foo {
       color: red;
@@ -93,7 +93,7 @@ test('detect changes if a property is extra', async () => {
   expect(result.changes).toHaveLength(1)
 })
 
-test('detect changes if a parent prop is !important', async () => {
+test('rule deleted and inherits prop by default', async () => {
   const css1 = `
     html {
       font-size: 20px;
@@ -107,9 +107,6 @@ test('detect changes if a parent prop is !important', async () => {
     html {
       font-size: 20px;
     }
-    .foo {
-      font-size: 10px !important;
-    }
   `
 
   const result = await compare(css1, css2, fooHtml)
@@ -118,5 +115,8 @@ test('detect changes if a parent prop is !important', async () => {
   expect(result.changes[0].property).toBe('font-size')
 
   expect(result.changes[0].prev.value).toBe('8px')
-  expect(result.changes[0].next.value).toBe('10px')
+  expect(result.changes[0].next.value).toBe('20px')
+
+  expect(result.changes[0].next.cssDeclaration).not.toBe(null)
+  expect(result.changes[0].next.cssDeclaration.value).toBe('20px')
 })

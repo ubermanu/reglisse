@@ -1,8 +1,6 @@
-import { parse } from '@adobe/css-tools'
 import { Viewport } from 'puppeteer'
 import { getComputedNodeTree } from './computed-tree'
-import { findChangeDeclaration } from './find-change-declaration.ts'
-import { createSelectorMatcher } from './selector-matcher.ts'
+import { findNodeDeclaration } from './find-node-declaration.ts'
 import { CompareResult, ComputedNode, Difference } from './types.ts'
 
 /**
@@ -23,33 +21,19 @@ export async function compare(
   // Compare the two computed node trees and return a list of changes
   let changes = compareComputedNodes(beforeNode, afterNode)
 
-  // Parse the new CSS source to find the declarations that affect the changes
-  const ast1 = parse(css1)
-  const ast2 = parse(css2)
-
-  const selectorMatcher = createSelectorMatcher(html)
-
-  for (const change of changes) {
-    change.prev.cssDeclaration = findChangeDeclaration(
-      change.prev.computedNode,
-      change.property,
-      ast1.stylesheet.rules,
-      selectorMatcher
-    )
-
-    change.next.cssDeclaration = findChangeDeclaration(
-      change.next.computedNode,
-      change.property,
-      ast2.stylesheet.rules,
-      selectorMatcher
-    )
-  }
-
   // Remove the change if there is no rule that affects it,
   // It might be a side effect of another property change
   changes = changes.filter((change) => {
     return change.prev.cssDeclaration || change.next.cssDeclaration
   })
+
+  // console.log(
+  //   changes.map(({ property, prev, next }) => ({
+  //     property,
+  //     prev: prev.value,
+  //     next: next.value,
+  //   }))
+  // )
 
   return { equal: changes.length === 0, changes }
 }
@@ -64,7 +48,7 @@ function compareComputedNodes(
   prevNode: ComputedNode,
   nextNode: ComputedNode
 ): Difference[] {
-  const changes = []
+  let changes: Difference[] = []
 
   // Compare the styles of the two nodes.
   const prevStyles = prevNode.style
@@ -108,13 +92,11 @@ function compareComputedNodes(
         prev: {
           value: before_rect[property],
           computedNode: prevNode,
-          cssRule: null,
           cssDeclaration: null,
         },
         next: {
           value: after_rect[property],
           computedNode: nextNode,
-          cssRule: null,
           cssDeclaration: null,
         },
       })
@@ -133,7 +115,7 @@ function compareComputedNodes(
   }
 
   // Remove duplicate changes
-  return changes.filter((change, index) => {
+  changes = changes.filter((change, index) => {
     const firstIndex = changes.findIndex(
       (c) =>
         c.property === change.property &&
@@ -141,4 +123,19 @@ function compareComputedNodes(
     )
     return firstIndex === index
   })
+
+  // Assign the css declaration to each change state
+  for (const change of changes) {
+    change.prev.cssDeclaration = findNodeDeclaration(
+      change.prev.computedNode,
+      change.property
+    )
+
+    change.next.cssDeclaration = findNodeDeclaration(
+      change.next.computedNode,
+      change.property
+    )
+  }
+
+  return changes
 }
