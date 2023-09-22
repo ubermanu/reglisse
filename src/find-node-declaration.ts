@@ -33,19 +33,13 @@ export const findNodeDeclaration = memo(
 
       // Traverse declarations (from bottom to top)
       for (const decl of declarations.reverse()) {
-        if (decl.property === property || decl.property === 'all') {
+        if (
+          decl.property === property ||
+          decl.property === 'all' ||
+          shorthandCssProperties[property]?.includes(decl.property)
+        ) {
           curDeclaration = decl
           break outer
-        }
-      }
-
-      // Check for shorthands
-      if (shorthandCssProperties[property]) {
-        for (const decl of declarations.reverse()) {
-          if (shorthandCssProperties[property]!.includes(decl.property)) {
-            curDeclaration = decl
-            break outer
-          }
         }
       }
     }
