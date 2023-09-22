@@ -1,4 +1,7 @@
+import { CssRuleAST, CssStylesheetAST, parse } from '@adobe/css-tools'
+import Specificity from '@bramus/specificity'
 import puppeteer, { Viewport } from 'puppeteer'
+import { createSelectorMatcher } from './selector-matcher.ts'
 import { ComputedNode } from './types.ts'
 
 /**
@@ -28,6 +31,16 @@ export async function getComputedNodeTree(
   }
 
   const tree = await page.evaluate(() => {
+    const invisibleTags = [
+      'script',
+      'style',
+      'head',
+      'meta',
+      'link',
+      'title',
+      'template',
+    ]
+
     // Recursive function to crawl the DOM tree and build the tree structure
     function buildTree(
       node: Element,
@@ -36,7 +49,7 @@ export async function getComputedNodeTree(
       const tagName = node.nodeName.toLowerCase()
 
       // Remove script, style, and head tags
-      if (['script', 'style', 'head'].includes(tagName)) {
+      if (invisibleTags.includes(tagName)) {
         return null
       }
 
@@ -55,7 +68,7 @@ export async function getComputedNodeTree(
         const siblingNodes = Array.from(node.parentNode.childNodes).filter(
           (child) =>
             child.nodeType === Node.ELEMENT_NODE &&
-            ['script', 'style', 'head'].includes(child.nodeName.toLowerCase())
+            !invisibleTags.includes(child.nodeName.toLowerCase())
         )
 
         if (siblingNodes.length > 1) {
@@ -112,12 +125,81 @@ export async function getComputedNodeTree(
   // so we need to resolve them manually.
   resolveParentDependencies(tree)
 
+  // Get the CSS rules that apply to each node (sorted by specificity)
+  const ast = parse(css, { silent: true })
+  resolveCssRules(tree, html, ast)
+
   return tree
 }
 
-function resolveParentDependencies(node: ComputedNode) {
+/**
+ * Resolve the parent dependencies of a computed node and its children.
+ *
+ * @recursive
+ */
+function resolveParentDependencies(node: ComputedNode): void {
   node.children.forEach((child) => {
     child.parent = node
     resolveParentDependencies(child)
   })
+}
+
+/**
+ * Resolve the CSS rules that apply to each computed node.
+ *
+ * @recursive
+ */
+function resolveCssRules(
+  node: ComputedNode,
+  html: string,
+  ast: CssStylesheetAST
+): void {
+  node.cssRules = findCssRules(node.selector, html, ast)
+  node.children.forEach((child) => {
+    resolveCssRules(child, html, ast)
+  })
+}
+
+/**
+ * Crawl an AST and find the CSS rules that match the given selector. Sort the
+ * rules by specificity (most specific first).
+ */
+function findCssRules(
+  selector: string,
+  html: string,
+  ast: CssStylesheetAST
+): CssRuleAST[] {
+  const selectorMatcher = createSelectorMatcher(html)
+
+  const rules = ast.stylesheet.rules.filter(
+    (rule) => rule.type === 'rule'
+  ) as CssRuleAST[]
+
+  type SpecificityRule = {
+    specificities: Specificity[]
+    cssRule: CssRuleAST
+  }
+
+  let items: SpecificityRule[] = []
+
+  for (const rule of rules) {
+    const selectors = rule.selectors.filter((s) =>
+      selectorMatcher.matches(selector, s)
+    )
+
+    if (selectors.length > 0) {
+      const specificities = Specificity.calculate(selectors.join(', '))
+      items.push({ specificities, cssRule: rule })
+    }
+  }
+
+  // Sort the node rules by specificity (most specific first)
+  // Each rule might target the same node multiple times, so we take the heaviest
+  items = items.sort((a, b) => {
+    const aSpec = Specificity.max(...a.specificities)
+    const bSpec = Specificity.max(...b.specificities)
+    return Specificity.compare(aSpec, bSpec)
+  })
+
+  return items.map((item) => item.cssRule)
 }

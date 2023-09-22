@@ -1,4 +1,4 @@
-import { CssDeclarationAST } from '@adobe/css-tools'
+import { CssDeclarationAST, CssRuleAST } from '@adobe/css-tools'
 
 export interface CompareResult {
   equal: boolean
@@ -80,4 +80,12 @@ export interface ComputedNode {
   style: {
     [property: string]: string
   }
+
+  /**
+   * The list of CSS rules that affect this node. This is a list of CSS rules
+   * that match the selector of this node.
+   *
+   * The rules are sorted by specificity (most specific first).
+   */
+  cssRules?: CssRuleAST[]
 }

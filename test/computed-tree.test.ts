@@ -50,3 +50,18 @@ test('setting a property on a tag sets the property on the tag', async () => {
   expect(tree.children[0].style.color).toBe('rgb(0, 0, 0)')
   expect(tree.children[0].children[0].style.color).toBe('rgb(255, 0, 0)')
 })
+
+test('the css rule is correctly defined', async () => {
+  const tree = await getComputedNodeTree(
+    '<div class="foo">foo</div><div class="bar">bar</div><div class="baz">baz</div>',
+    '.foo { color: red; } .bar { color: blue; }'
+  )
+
+  expect(tree.children[0].children[0].cssRules).toHaveLength(1)
+  expect(tree.children[0].children[0].cssRules[0].selectors).toEqual(['.foo'])
+
+  expect(tree.children[0].children[1].cssRules).toHaveLength(1)
+  expect(tree.children[0].children[1].cssRules[0].selectors).toEqual(['.bar'])
+
+  expect(tree.children[0].children[2].cssRules).toHaveLength(0)
+})
