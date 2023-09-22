@@ -1,7 +1,6 @@
 import { CssDeclarationAST, CssRuleAST } from '@adobe/css-tools'
 import memo from 'memoizee'
 import inheritedCssProperties from './css-properties/inherited'
-import sideEffectCssProperties from './css-properties/side-effect'
 import { ComputedNode } from './types.ts'
 
 /**
@@ -51,9 +50,9 @@ export const findNodeDeclaration = memo(
         for (const decl of declarations.reverse()) {
           // It has to match the previous declaration property
           if (decl.property === curDeclaration!.property) {
+            curDeclaration = decl
             if (decl.value === 'inherit') {
               // If the value is `inherit`, we need to check the parent rules
-              curDeclaration = decl
               break
             } else {
               // If the value is not `inherit`, we can stop

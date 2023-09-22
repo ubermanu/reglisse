@@ -120,3 +120,29 @@ test('rule deleted and inherits prop by default', async () => {
   expect(result.changes[0].next.cssDeclaration).not.toBe(null)
   expect(result.changes[0].next.cssDeclaration.value).toBe('20px')
 })
+
+test('declaration value is set to inherit', async () => {
+  const css1 = `
+    html {
+      font-size: 20px;
+    }
+    div {
+      font-size: 10px;
+    }
+  `
+
+  const css2 = `
+    html {
+      font-size: 20px;
+    }
+    div {
+      font-size: inherit;
+    }
+  `
+
+  const result = await compare(css1, css2, fooHtml)
+  expect(result.changes).toHaveLength(1)
+
+  expect(result.changes[0].property).toBe('font-size')
+  expect(result.changes[0].next.cssDeclaration.value).toBe('20px')
+})
